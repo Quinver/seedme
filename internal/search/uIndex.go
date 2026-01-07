@@ -14,7 +14,7 @@ import (
 func SearchUIndex(query []string) ([]model.Torrent, error) {
 	doc, err := fetchUIndex(uIndexURL(query))
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("Fetch failed: %w", err)
 	}
 
 	var results []model.Torrent
@@ -22,7 +22,7 @@ func SearchUIndex(query []string) ([]model.Torrent, error) {
 	doc.Find("table tbody tr").Each(func(i int, s *goquery.Selection) {
 		title := strings.TrimSpace(
 			s.Find(`a[href^="/details"]`).First().Text(),
-			)
+		)
 		if title == "" {
 			return
 		}
@@ -31,7 +31,6 @@ func SearchUIndex(query []string) ([]model.Torrent, error) {
 		if !ok {
 			return
 		}
-
 
 		seedText := strings.TrimSpace(s.Find("span.g").First().Text())
 		seeds, err := strconv.Atoi(seedText)
@@ -57,16 +56,21 @@ func uIndexURL(query []string) string {
 		q,
 	)
 }
-
 func fetchUIndex(url string) (*goquery.Document, error) {
 	resp, err := http.Get(url)
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("fetch failed: %w", err)
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode != 200 {
-		panic("Status code not OK")
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status: %s", resp.Status)
 	}
 
-	return goquery.NewDocumentFromReader(resp.Body)
+	doc, err := goquery.NewDocumentFromReader(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("parse failed: %w", err)
+	}
+
+	return doc, nil
 }

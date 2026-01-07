@@ -14,7 +14,7 @@ import (
 func SearchNyaa(query []string) ([]model.Torrent, error) {
 	doc, err := fetchNyaa(nyaaURL(query))
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("Fetch failed: %w", err)
 	}
 
 	var results []model.Torrent
@@ -64,11 +64,11 @@ func nyaaURL(query []string) string {
 func fetchNyaa(url string) (*goquery.Document, error) {
 	resp, err := http.Get(url)
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("Can't get response: %w", err)
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
-		panic("Status code not OK")
+		return nil, fmt.Errorf("unexpected status: %s", resp.Status)
 	}
 
 	return goquery.NewDocumentFromReader(resp.Body)
