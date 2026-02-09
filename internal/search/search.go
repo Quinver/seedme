@@ -10,9 +10,11 @@ func All(query []string) ([]model.Torrent, error) {
 
 	nyaa, _ := SearchNyaa(query)
 	uIndex, _ := SearchUIndex(query)
+	pirateBay, _ := SearchPirateBay(query)
 
 	results = append(results, nyaa...)
 	results = append(results, uIndex...)
+	results = append(results, pirateBay...)
 
 	sort.Slice(results, func(i, j int) bool {
 		return results[i].Seeds > results[j].Seeds

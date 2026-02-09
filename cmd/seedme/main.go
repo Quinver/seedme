@@ -7,7 +7,15 @@ import (
 	"seedme/internal/picker"
 	"seedme/internal/search"
 	"seedme/internal/stream"
+
+	"github.com/joho/godotenv"
 )
+
+func init() {
+	if err := godotenv.Load(); err != nil {
+		fmt.Println("No .env found")
+	}
+}
 
 func main() {
 	for _, dep := range []string{"webtorrent", "fzf", "mpv"} {
