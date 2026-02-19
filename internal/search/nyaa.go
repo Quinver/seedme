@@ -11,8 +11,8 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-func SearchNyaa(query []string) ([]model.Torrent, error) {
-	doc, err := fetchNyaa(nyaaURL(query))
+func SearchNyaa(client *http.Client, query []string) ([]model.Torrent, error) {
+	doc, err := fetchNyaa(client, nyaaURL(query))
 	if err != nil {
 		return nil, fmt.Errorf("Fetch failed: %w", err)
 	}
@@ -61,8 +61,8 @@ func nyaaURL(query []string) string {
 	)
 }
 
-func fetchNyaa(url string) (*goquery.Document, error) {
-	resp, err := http.Get(url)
+func fetchNyaa(client *http.Client, url string) (*goquery.Document, error) {
+	resp, err := client.Get(url)
 	if err != nil {
 		return nil, fmt.Errorf("Can't get response: %w", err)
 	}

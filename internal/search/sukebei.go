@@ -11,8 +11,8 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-func SearchUIndex(client *http.Client, query []string) ([]model.Torrent, error) {
-	doc, err := fetchUIndex(client, uIndexURL(query))
+func SearchSukebei(client *http.Client, query []string) ([]model.Torrent, error) {
+	doc, err := fetchSukebei(client, sukebeiURL(query))
 	if err != nil {
 		return nil, fmt.Errorf("Fetch failed: %w", err)
 	}
@@ -20,10 +20,9 @@ func SearchUIndex(client *http.Client, query []string) ([]model.Torrent, error) 
 	var results []model.Torrent
 
 	doc.Find("table tbody tr").Each(func(i int, s *goquery.Selection) {
-		title := strings.TrimSpace(
-			s.Find(`a[href^="/details"]`).First().Text(),
-		)
-		if title == "" {
+		a := s.Find(`a[href^="/view/"]:not(.comments)`).First()
+		title, ok := a.Attr("title")
+		if !ok {
 			return
 		}
 
@@ -32,14 +31,19 @@ func SearchUIndex(client *http.Client, query []string) ([]model.Torrent, error) 
 			return
 		}
 
-		seedText := strings.TrimSpace(s.Find("span.g").First().Text())
+		tds := s.Find("td.text-center")
+		if tds.Length() < 4 {
+			return
+		}
+
+		seedText := strings.TrimSpace(tds.Eq(3).Text())
 		seeds, err := strconv.Atoi(seedText)
 		if err != nil {
 			seeds = 0
 		}
 
 		results = append(results, model.Torrent{
-			Site:   "uIndex",
+			Site:   "Sukebei",
 			Title:  title,
 			Seeds:  seeds,
 			Magnet: magnet,
@@ -49,28 +53,23 @@ func SearchUIndex(client *http.Client, query []string) ([]model.Torrent, error) 
 	return results, nil
 }
 
-func uIndexURL(query []string) string {
+func sukebeiURL(query []string) string {
 	q := url.QueryEscape(strings.Join(query, " "))
 	return fmt.Sprintf(
-		"https://uindex.org/search.php?search=%s&c=0&sort=seeders&order=DESC",
+		"https://sukebei.nyaa.si/?f=0&c=0_0&q=%s&s=seeders&o=desc",
 		q,
 	)
 }
-func fetchUIndex(client *http.Client, url string) (*goquery.Document, error) {
+
+func fetchSukebei(client *http.Client, url string) (*goquery.Document, error) {
 	resp, err := client.Get(url)
 	if err != nil {
-		return nil, fmt.Errorf("fetch failed: %w", err)
+		return nil, fmt.Errorf("Can't get response: %w", err)
 	}
 	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode != 200 {
 		return nil, fmt.Errorf("unexpected status: %s", resp.Status)
 	}
 
-	doc, err := goquery.NewDocumentFromReader(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("parse failed: %w", err)
-	}
-
-	return doc, nil
+	return goquery.NewDocumentFromReader(resp.Body)
 }

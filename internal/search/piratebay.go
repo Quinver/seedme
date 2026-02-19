@@ -11,8 +11,8 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-func SearchPirateBay(query []string) ([]model.Torrent, error) {
-	doc, err := fetchUIndex(pirateBayURL(query))
+func SearchPirateBay(client *http.Client,query []string) ([]model.Torrent, error) {
+	doc, err := fetchPirateBay(client, pirateBayURL(query))
 	if err != nil {
 		return nil, fmt.Errorf("Fetch failed: %w", err)
 	}
@@ -61,8 +61,8 @@ func pirateBayURL(query []string) string {
 		q,
 	)
 }
-func fetchPirateBay(url string) (*goquery.Document, error) {
-	resp, err := http.Get(url)
+func fetchPirateBay(client *http.Client, url string) (*goquery.Document, error) {
+	resp, err := client.Get(url)
 	if err != nil {
 		return nil, fmt.Errorf("fetch failed: %w", err)
 	}
